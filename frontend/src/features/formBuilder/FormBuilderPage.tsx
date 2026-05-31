@@ -147,38 +147,40 @@ const renderPreviewField = (field: FieldDefinition) => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/forms")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              {isEditMode ? "Edit Form" : "Create New Form"}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {isEditMode ? "Modify form fields and settings" : "Build a custom dynamic form"}
-            </p>
+    <div className="space-y-8">
+      <div className="bg-gradient-to-r from-primary/5 via-purple-50/30 to-transparent -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-b-3xl">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/admin/forms")} className="hover:bg-white/50">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                {isEditMode ? "Edit Form" : "Create New Form"}
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                {isEditMode ? "Modify form fields and settings" : "Build a custom dynamic form with drag-and-drop fields"}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex gap-2">
-          {!previewMode && fields.length > 0 && (
-            <Button variant="outline" onClick={() => setPreviewMode(true)} className="btn-transition">
-              <Eye className="h-4 w-4 mr-2" />
-              Preview
+          <div className="flex gap-2">
+            {!previewMode && fields.length > 0 && (
+              <Button variant="outline" onClick={() => setPreviewMode(true)} className="gap-2">
+                <Eye className="h-4 w-4" />
+                Preview
+              </Button>
+            )}
+            {previewMode && (
+              <Button variant="outline" onClick={handleEdit} className="gap-2">
+                <Edit3 className="h-4 w-4" />
+                Edit Form
+              </Button>
+            )}
+            <Button onClick={handleSave} disabled={saving} className="bg-gradient-to-r from-primary to-purple-600 shadow-lg gap-2">
+              <Save className="h-4 w-4" />
+              {saving ? "Saving..." : "Save Form"}
             </Button>
-          )}
-          {previewMode && (
-            <Button variant="outline" onClick={handleEdit} className="btn-transition">
-              <Edit3 className="h-4 w-4 mr-2" />
-              Edit Form
-            </Button>
-          )}
-          <Button onClick={handleSave} disabled={saving} className="btn-transition">
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? "Saving..." : "Save Form"}
-          </Button>
+          </div>
         </div>
       </div>
 

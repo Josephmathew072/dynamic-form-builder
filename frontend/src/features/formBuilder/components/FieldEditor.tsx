@@ -75,11 +75,14 @@ export default function FieldEditor({ field, onSave, onCancel }: FieldEditorProp
   const needsDefaultValue = editedField.type === "checkbox"
 
   return (
-    <Card className="sticky top-6">
-      <CardHeader>
-        <CardTitle>Edit Field</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        <Card className="sticky top-6 shadow-xl border-0 bg-gradient-to-br from-white to-gray-50/50">
+        <CardHeader className="bg-gradient-to-r from-primary/10 to-purple-50/50 border-b">
+            <CardTitle className="flex items-center gap-2">
+            <div className="w-1 h-6 bg-gradient-to-b from-primary to-purple-600 rounded-full" />
+            Edit Field
+            </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-6">
         {/* Field Label */}
         <div>
           <Label htmlFor="label">Label *</Label>

@@ -5,7 +5,7 @@ interface SelectDistributionChartProps {
   title: string
 }
 
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4']
+const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#6366F1', '#14B8A6', '#F97316']
 
 export default function SelectDistributionChart({ data, title }: SelectDistributionChartProps) {
   const chartData = Object.entries(data).map(([name, value]) => ({ name, value }))
@@ -16,6 +16,23 @@ export default function SelectDistributionChart({ data, title }: SelectDistribut
         No data available
       </div>
     )
+  }
+
+  // Custom Tooltip
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const total = chartData.reduce((sum, item) => sum + item.value, 0)
+      const percentage = ((payload[0].value / total) * 100).toFixed(1)
+      return (
+        <div className="bg-white px-3 py-2 rounded-lg shadow-lg border">
+          <p className="text-sm font-semibold">{payload[0].name}</p>
+          <p className="text-xs text-muted-foreground">
+            {payload[0].value} submissions ({percentage}%)
+          </p>
+        </div>
+      )
+    }
+    return null
   }
 
   return (
@@ -32,11 +49,19 @@ export default function SelectDistributionChart({ data, title }: SelectDistribut
           dataKey="value"
         >
           {chartData.map((_, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            <Cell 
+              key={`cell-${index}`} 
+              fill={COLORS[index % COLORS.length]} 
+              stroke="white"
+              strokeWidth={2}
+            />
           ))}
         </Pie>
-        <Tooltip />
-        <Legend />
+        <Tooltip content={<CustomTooltip />} />
+        <Legend 
+          wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }}
+          formatter={(value) => <span className="text-sm text-muted-foreground">{value}</span>}
+        />
       </PieChart>
     </ResponsiveContainer>
   )

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { TooltipProvider } from './components/ui/tooltip'
 import LoginPage from './features/auth/LoginPage';
 import CreateAdminPage from './features/auth/CreateAdminPage';
 import AdminLayout from './components/layout/AdminLayout';
@@ -13,6 +14,7 @@ import LandingPage from './features/landing/LandingPage';
 
 function App() {
   return (
+    <TooltipProvider>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -40,6 +42,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
+    </TooltipProvider>
   );
 }
 
