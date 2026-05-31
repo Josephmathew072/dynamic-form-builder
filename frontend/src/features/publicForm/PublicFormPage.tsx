@@ -113,7 +113,7 @@ export default function PublicFormPage() {
                     </div>
                 </div> */}
 
-                <Card className="shadow-2xl border-0 overflow-hidden">
+                <Card className="shadow-2xl border-0 overflow-visible">
                     <div className="h-2 bg-gradient-to-r from-primary via-purple-500 to-pink-500" />
                     <CardHeader className="bg-white border-b border-gray-100 pb-6">
                         <CardTitle className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
@@ -125,13 +125,13 @@ export default function PublicFormPage() {
                             </CardDescription>
                         )}
                     </CardHeader>
-                    <CardContent className="pt-8">
+                    <CardContent className="pt-8 overflow-visible">
                         <FormProvider {...methods}>
-                            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+                            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 overflow-visible">
                                 {currentForm.fields.map((field, index) => (
                                     <div
                                         key={field.id}
-                                        className="animate-in slide-in-from-bottom-4 duration-500"
+                                        className="relative overflow-visible animate-in slide-in-from-bottom-4 duration-500"
                                         style={{ animationDelay: `${index * 50}ms` }}
                                     >
                                         <DynamicField

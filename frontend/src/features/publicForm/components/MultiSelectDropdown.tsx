@@ -84,7 +84,7 @@ export default function MultiSelectDropdown({ options, value, onChange, placehol
       {open && (
         <div 
           className={`absolute z-50 w-full bg-white border rounded-md shadow-lg overflow-hidden ${
-            dropdownPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
+            dropdownPosition === 'top' ? 'bottom-full mb-1' : 'bottom-full mb-1'
           }`}
         >
           <div className="flex justify-between items-center p-2 border-b bg-gray-50">
