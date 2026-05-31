@@ -12,6 +12,7 @@ import FieldEditor from "./components/FieldEditor";
 import { FieldDefinition } from "../../types/form.types";
 import { PlusCircle, Eye, Edit3, Save, ArrowLeft } from "lucide-react";
 import LoadingSpinner from "../../components/shared/LoadingSpinner";
+import { Textarea } from "../../components/ui/textarea";
 
 export default function FormBuilderPage() {
   const navigate = useNavigate();
@@ -94,30 +95,52 @@ export default function FormBuilderPage() {
     setPreviewMode(false);
   };
 
-  const renderPreviewField = (field: FieldDefinition) => {
-    switch (field.type) {
-      case "text":
-        return <Input placeholder={field.placeholder || "Text input"} disabled className="bg-gray-50" />;
-      case "number":
-        return <Input type="number" placeholder={field.placeholder || "Number"} disabled className="bg-gray-50" />;
-      case "select":
-        if (field.multiple) {
-          return (
-            <div className="border rounded-md p-2 bg-gray-50 text-gray-400 text-sm">
-              Multi-select: {field.options?.slice(0, 3).join(", ")}{field.options && field.options.length > 3 ? "..." : ""}
-            </div>
-          );
-        }
+const renderPreviewField = (field: FieldDefinition) => {
+  switch (field.type) {
+    case "text":
+      return <Input placeholder={field.placeholder || "Text input"} disabled className="bg-gray-50" />
+    case "textarea":
+      return <Textarea placeholder={field.placeholder || "Long text input"} disabled className="bg-gray-50" rows={3} />
+    case "number":
+      return <Input type="number" placeholder={field.placeholder || "Number"} disabled className="bg-gray-50" />
+    case "date":
+      return <Input type="date" disabled className="bg-gray-50" />
+    case "select":
+      if (field.multiple) {
         return (
-          <select disabled className="w-full border rounded-md p-2 bg-gray-50 text-gray-400">
-            <option>Select {field.label}</option>
-            {field.options?.map(opt => <option key={opt}>{opt}</option>)}
-          </select>
-        );
-      default:
-        return <Input disabled />;
-    }
-  };
+          <div className="border rounded-md p-2 bg-gray-50 text-gray-400 text-sm">
+            Multi-select: {field.options?.slice(0, 3).join(", ")}{field.options && field.options.length > 3 ? "..." : ""}
+          </div>
+        )
+      }
+      return (
+        <select disabled className="w-full border rounded-md p-2 bg-gray-50 text-gray-400">
+          <option>Select {field.label}</option>
+          {field.options?.map(opt => <option key={opt}>{opt}</option>)}
+        </select>
+      )
+    case "radio":
+      return (
+        <div className="space-y-1">
+          {field.options?.map(opt => (
+            <div key={opt} className="flex items-center gap-2">
+              <input type="radio" disabled checked={false} />
+              <span className="text-sm text-gray-500">{opt}</span>
+            </div>
+          ))}
+        </div>
+      )
+    case "checkbox":
+      return (
+        <div className="flex items-center gap-2">
+          <input type="checkbox" disabled checked={field.defaultValue as boolean || false} />
+          <span className="text-sm text-gray-500">{field.placeholder || "Checkbox"}</span>
+        </div>
+      )
+    default:
+      return <Input disabled />
+  }
+}
 
   if (loading && isEditMode) {
     return <LoadingSpinner />;

@@ -22,6 +22,18 @@ export const validateResponse = (form, answers) => {
       }
     }
     
+    if (field.type === 'date') {
+      if (isNaN(Date.parse(answer))) {
+        errors.push(`Field "${field.label}" must be a valid date`);
+      }
+    }
+    
+    if (field.type === 'checkbox') {
+      if (typeof answer !== 'boolean') {
+        errors.push(`Field "${field.label}" must be true or false`);
+      }
+    }
+    
     // Select validation
     if (field.type === 'select') {
       if (field.multiple) {
@@ -38,6 +50,13 @@ export const validateResponse = (form, answers) => {
         if (!field.options.includes(answer)) {
           errors.push(`"${answer}" is not a valid option for "${field.label}"`);
         }
+      }
+    }
+    
+    // Radio validation
+    if (field.type === 'radio') {
+      if (!field.options.includes(answer)) {
+        errors.push(`"${answer}" is not a valid option for "${field.label}"`);
       }
     }
   }

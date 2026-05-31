@@ -1,11 +1,12 @@
 export interface FieldDefinition {
   id: string
-  type: "text" | "number" | "select"
+  type: "text" | "number" | "select" | "radio" | "textarea" | "date" | "checkbox"
   label: string
   required: boolean
   placeholder?: string
   options?: string[]
   multiple?: boolean
+  defaultValue?: string | number | boolean
 }
 
 export interface Form {
@@ -16,7 +17,6 @@ export interface Form {
   shareableId: string
   createdAt: string
 }
-
 export interface Response {
   _id: string
   formId: string

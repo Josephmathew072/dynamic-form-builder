@@ -2,12 +2,17 @@ import mongoose from 'mongoose';
 
 const fieldSchema = new mongoose.Schema({
   id: { type: String, required: true },
-  type: { type: String, enum: ['text', 'number', 'select'], required: true },
+  type: { 
+    type: String, 
+    enum: ['text', 'number', 'select', 'radio', 'textarea', 'date', 'checkbox'], 
+    required: true 
+  },
   label: { type: String, required: true },
   required: { type: Boolean, default: false },
   placeholder: { type: String },
-  options: { type: [String], default: [] },
-  multiple: { type: Boolean, default: false }
+  options: { type: [String], default: [] }, // For select and radio
+  multiple: { type: Boolean, default: false }, // For select only
+  defaultValue: { type: mongoose.Schema.Types.Mixed, default: null }, // For checkbox/radio
 });
 
 const formSchema = new mongoose.Schema({
