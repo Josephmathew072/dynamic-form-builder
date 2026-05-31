@@ -241,7 +241,7 @@ Admin
 ![Export Reports](./docs/screenshots/export-reports.png)
 
 ### Mobile View
-![Mobile View](./docs/screenshots/mobile-view.png)
+![Mobile View](./docs/screenshots/mobile-view.jpeg)
 
 ---
 
