@@ -216,8 +216,6 @@ Admin
 
 ## 📸 Screenshots
 
-> Replace the placeholders below with actual project screenshots.
-
 ### Landing Page
 ![Landing Page](./docs/screenshots/landing-page.png)
 
@@ -355,7 +353,7 @@ VITE_API_URL=http://localhost:5000/api
 
 ## 👨‍💻 Author
 
-**Joseph Mathew Aikara**
+**Joseph Mathew**
 
 - GitHub: https://github.com/Josephmathew072
 - LinkedIn: https://www.linkedin.com/in/joseph-mathew-aikara/
