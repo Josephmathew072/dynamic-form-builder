@@ -43,7 +43,7 @@ export const getDashboardStats = async (req, res) => {
       .limit(5)
       .select('title fields createdAt');
     
-    // Get recent activity (last 5 responses)
+    // Get recent activity (last 5 responses) - return UTC time, frontend will convert
     const recentActivity = await Response.aggregate([
       { $sort: { submittedAt: -1 } },
       { $limit: 5 },
@@ -60,36 +60,56 @@ export const getDashboardStats = async (req, res) => {
         $project: {
           action: { $literal: 'New response submitted' },
           formTitle: '$form.title',
-          time: '$submittedAt'
+          time: '$submittedAt'  // Keep as UTC, frontend will format
         }
       }
     ]);
     
-    // Get current date in local timezone
+    // Get current date in server's local timezone
     const now = new Date();
-    const localNow = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
     
-    // Calculate month boundaries in local timezone
-    const currentMonthStart = new Date(localNow.getFullYear(), localNow.getMonth(), 1);
-    const lastMonthStart = new Date(localNow.getFullYear(), localNow.getMonth() - 1, 1);
-    const nextMonthStart = new Date(localNow.getFullYear(), localNow.getMonth() + 1, 1);
+    // Create date boundaries using server's local timezone
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
     
-    // Convert to UTC for MongoDB query (query start of day in local timezone)
-    const currentMonthStartUTC = new Date(currentMonthStart.getTime() + (now.getTimezoneOffset() * 60000));
-    const lastMonthStartUTC = new Date(lastMonthStart.getTime() + (now.getTimezoneOffset() * 60000));
-    const nextMonthStartUTC = new Date(nextMonthStart.getTime() + (now.getTimezoneOffset() * 60000));
+    // Current month start (local time)
+    const currentMonthStart = new Date(currentYear, currentMonth, 1);
+    currentMonthStart.setHours(0, 0, 0, 0);
     
-    // Get responses for current month (local timezone)
+    // Current month end (local time)
+    const currentMonthEnd = new Date(currentYear, currentMonth + 1, 0);
+    currentMonthEnd.setHours(23, 59, 59, 999);
+    
+    // Last month start (local time)
+    const lastMonthStart = new Date(currentYear, currentMonth - 1, 1);
+    lastMonthStart.setHours(0, 0, 0, 0);
+    
+    // Last month end (local time)
+    const lastMonthEnd = new Date(currentYear, currentMonth, 0);
+    lastMonthEnd.setHours(23, 59, 59, 999);
+    
+    // Query using UTC but with local date boundaries
+    // Convert local dates to UTC for MongoDB query
+    const currentMonthStartUTC = new Date(currentMonthStart.toISOString());
+    const currentMonthEndUTC = new Date(currentMonthEnd.toISOString());
+    const lastMonthStartUTC = new Date(lastMonthStart.toISOString());
+    const lastMonthEndUTC = new Date(lastMonthEnd.toISOString());
+    
     const currentMonthResponses = await Response.countDocuments({
-      submittedAt: { $gte: currentMonthStartUTC, $lt: nextMonthStartUTC }
+      submittedAt: { 
+        $gte: currentMonthStartUTC, 
+        $lte: currentMonthEndUTC 
+      }
     });
     
-    // Get responses for last month (local timezone)
     const lastMonthResponses = await Response.countDocuments({
-      submittedAt: { $gte: lastMonthStartUTC, $lt: currentMonthStartUTC }
+      submittedAt: { 
+        $gte: lastMonthStartUTC, 
+        $lte: lastMonthEndUTC 
+      }
     });
     
-    // Get month names for display
+    // Get month names
     const currentMonthName = currentMonthStart.toLocaleDateString('en-US', { month: 'long' });
     const lastMonthName = lastMonthStart.toLocaleDateString('en-US', { month: 'long' });
     
@@ -99,38 +119,33 @@ export const getDashboardStats = async (req, res) => {
     let trendMessage = 'No change';
     let trendDetails = '';
     
-    // Check if current month just started (within first 7 days of local month)
-    const currentDay = localNow.getDate();
+    // Check if current month just started (within first 7 days of current month in local time)
+    const currentDay = now.getDate();
     const isEarlyMonth = currentDay <= 7;
     
     if (lastMonthResponses === 0 && currentMonthResponses === 0) {
-      // No responses in either month
       responseTrend = 0;
       trendDirection = 'stable';
       trendMessage = 'No responses yet';
       trendDetails = 'Start sharing your forms to collect responses';
     } else if (lastMonthResponses === 0 && currentMonthResponses > 0) {
-      // New responses this month
       responseTrend = 100;
       trendDirection = 'up';
       trendMessage = `+${currentMonthResponses} this month`;
       trendDetails = `Started receiving responses in ${currentMonthName}`;
     } else if (lastMonthResponses > 0 && currentMonthResponses === 0) {
       if (isEarlyMonth) {
-        // Early in the month, show optimistic message
         responseTrend = 0;
         trendDirection = 'stable';
         trendMessage = `Waiting for ${currentMonthName} responses`;
         trendDetails = `${lastMonthName} had ${lastMonthResponses} responses. Share your forms to get more!`;
       } else {
-        // Late in month with no responses
         responseTrend = -100;
         trendDirection = 'down';
         trendMessage = `No responses in ${currentMonthName}`;
         trendDetails = `${lastMonthName} had ${lastMonthResponses} responses`;
       }
     } else {
-      // Calculate percentage change
       const percentageChange = ((currentMonthResponses - lastMonthResponses) / lastMonthResponses) * 100;
       const absPercentage = Math.abs(percentageChange);
       responseTrend = Math.round(absPercentage);
