@@ -73,7 +73,7 @@ export default function AdminDashboard() {
             trendUp: true
         },
         {
-            title: "Monthly Trend",
+            title: `${stats?.currentMonthName || 'This'} Month`,
             value: currentMonthResponses,
             icon: TrendingUp,
             gradient: "from-orange-500 to-red-500",
@@ -81,9 +81,10 @@ export default function AdminDashboard() {
             textColor: "text-orange-600",
             trend: trendMessage,
             trendUp: trendDirection === 'up',
-            subValue: `vs ${lastMonthResponses} last month`
+            trendDetails: stats?.trendDetails || '',
+            subValue: `vs ${lastMonthResponses} in ${stats?.lastMonthName || 'last'} month`
         },
-    ]
+    ];
 
     if (loading) {
         return (
@@ -134,7 +135,7 @@ export default function AdminDashboard() {
                             <div className="flex flex-col">
                                 <div className="flex items-baseline justify-between">
                                     <div className="text-3xl font-bold">{stat.value}</div>
-                                    {stat.title === "Monthly Trend" && stats && (
+                                    {stat.title.includes("Month") && stats && (
                                         <div className={`flex items-center gap-1 text-xs font-medium ${trendDirection === 'up' ? 'text-green-600' : trendDirection === 'down' ? 'text-red-600' : 'text-gray-500'}`}>
                                             {trendDirection === 'up' && <TrendingUp className="h-3 w-3" />}
                                             {trendDirection === 'down' && <TrendingDown className="h-3 w-3" />}
@@ -143,14 +144,17 @@ export default function AdminDashboard() {
                                         </div>
                                     )}
                                 </div>
-                                {stat.title === "Monthly Trend" && (
+                                {stat.title.includes("Month") && stat.trendDetails && (
+                                    <p className="text-xs text-muted-foreground mt-1">{stat.trendDetails}</p>
+                                )}
+                                {stat.subValue && (
                                     <p className="text-xs text-muted-foreground mt-1">{stat.subValue}</p>
                                 )}
                                 <p className="text-xs text-muted-foreground mt-2">
                                     {stat.title === "Total Forms" && "Forms created"}
                                     {stat.title === "Total Responses" && "Total submissions received"}
                                     {stat.title === "Active Forms" && "Forms with responses"}
-                                    {stat.title === "Monthly Trend" && "Responses this month"}
+                                    {stat.title.includes("Month") && "Responses received"}
                                 </p>
                             </div>
                         </CardContent>

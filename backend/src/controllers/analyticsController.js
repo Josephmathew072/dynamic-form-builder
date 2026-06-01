@@ -10,10 +10,10 @@ export const getAnalytics = async (req, res) => {
     if (!form) {
       return res.status(404).json({ message: 'Form not found' });
     }
-    
+
     const responses = await Response.find({ formId: req.params.formId });
     const analytics = computeAnalytics(form, responses);
-    
+
     res.json(analytics);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -26,23 +26,23 @@ export const getDashboardStats = async (req, res) => {
   try {
     // Get total forms
     const totalForms = await Form.countDocuments();
-    
+
     // Get total responses across all forms
     const totalResponses = await Response.countDocuments();
-    
+
     // Get active forms (forms with at least one response)
     const formsWithResponses = await Response.aggregate([
       { $group: { _id: "$formId" } },
       { $count: "count" }
     ]);
     const activeForms = formsWithResponses[0]?.count || 0;
-    
+
     // Get recent forms (last 5)
     const recentForms = await Form.find()
       .sort({ createdAt: -1 })
       .limit(5)
       .select('title fields createdAt');
-    
+
     // Get recent activity (last 5 responses)
     const recentActivity = await Response.aggregate([
       { $sort: { submittedAt: -1 } },
@@ -64,52 +64,81 @@ export const getDashboardStats = async (req, res) => {
         }
       }
     ]);
-    
+
     // Calculate trend with better logic
     const now = new Date();
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const lastMonthEnd = currentMonthStart;
-    
+
     const currentMonthResponses = await Response.countDocuments({
       submittedAt: { $gte: currentMonthStart }
     });
-    
+
     const lastMonthResponses = await Response.countDocuments({
       submittedAt: {
         $gte: lastMonthStart,
         $lt: lastMonthEnd
       }
     });
-    
+
+    // Get month names for display
+    const currentMonthName = currentMonthStart.toLocaleDateString('en-US', { month: 'long' });
+    const lastMonthName = lastMonthStart.toLocaleDateString('en-US', { month: 'long' });
+
     // Calculate trend with proper handling
     let responseTrend = 0;
     let trendDirection = 'stable';
     let trendMessage = 'No change';
-    
+    let trendDetails = '';
+
     if (lastMonthResponses === 0 && currentMonthResponses === 0) {
       // No responses in either month
       responseTrend = 0;
       trendDirection = 'stable';
       trendMessage = 'No responses yet';
+      trendDetails = 'Start sharing your forms to collect responses';
     } else if (lastMonthResponses === 0 && currentMonthResponses > 0) {
       // New responses this month
       responseTrend = 100;
       trendDirection = 'up';
-      trendMessage = 'Started receiving responses';
+      trendMessage = `+${currentMonthResponses} this month`;
+      trendDetails = `Started receiving responses in ${currentMonthName}`;
     } else if (lastMonthResponses > 0 && currentMonthResponses === 0) {
-      // No responses this month
-      responseTrend = -100;
-      trendDirection = 'down';
-      trendMessage = 'No responses this month';
+      // Check if current month just started (within first 7 days)
+      const daysInCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const currentDay = now.getDate();
+      const isEarlyMonth = currentDay <= 7;
+
+      if (isEarlyMonth) {
+        // Early in the month, show optimistic message
+        responseTrend = 0;
+        trendDirection = 'stable';
+        trendMessage = `Waiting for ${currentMonthName} responses`;
+        trendDetails = `${lastMonthName} had ${lastMonthResponses} responses. Share your forms to get more!`;
+      } else {
+        // Late in month with no responses
+        responseTrend = -100;
+        trendDirection = 'down';
+        trendMessage = `No responses in ${currentMonthName}`;
+        trendDetails = `${lastMonthName} had ${lastMonthResponses} responses`;
+      }
     } else {
       // Calculate percentage change
       const percentageChange = ((currentMonthResponses - lastMonthResponses) / lastMonthResponses) * 100;
-      responseTrend = Math.round(Math.abs(percentageChange));
+      const absPercentage = Math.abs(percentageChange);
+      responseTrend = Math.round(absPercentage);
       trendDirection = percentageChange >= 0 ? 'up' : 'down';
-      trendMessage = `${Math.abs(percentageChange).toFixed(1)}% ${percentageChange >= 0 ? 'increase' : 'decrease'}`;
+
+      if (percentageChange >= 0) {
+        trendMessage = `+${currentMonthResponses} this month`;
+        trendDetails = `${absPercentage.toFixed(1)}% increase from ${lastMonthName}`;
+      } else {
+        trendMessage = `${currentMonthResponses} this month`;
+        trendDetails = `${absPercentage.toFixed(1)}% decrease from ${lastMonthName}`;
+      }
     }
-    
+
     res.json({
       totalForms,
       totalResponses,
@@ -117,8 +146,11 @@ export const getDashboardStats = async (req, res) => {
       responseTrend,
       trendDirection,
       trendMessage,
+      trendDetails,
       currentMonthResponses,
       lastMonthResponses,
+      currentMonthName,
+      lastMonthName,
       recentForms: recentForms.map(form => ({
         id: form._id,
         title: form.title,
