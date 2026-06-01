@@ -26,23 +26,23 @@ export const getDashboardStats = async (req, res) => {
   try {
     // Get total forms
     const totalForms = await Form.countDocuments();
-
+    
     // Get total responses across all forms
     const totalResponses = await Response.countDocuments();
-
+    
     // Get active forms (forms with at least one response)
     const formsWithResponses = await Response.aggregate([
       { $group: { _id: "$formId" } },
       { $count: "count" }
     ]);
     const activeForms = formsWithResponses[0]?.count || 0;
-
+    
     // Get recent forms (last 5)
     const recentForms = await Form.find()
       .sort({ createdAt: -1 })
       .limit(5)
       .select('title fields createdAt');
-
+    
     // Get recent activity (last 5 responses)
     const recentActivity = await Response.aggregate([
       { $sort: { submittedAt: -1 } },
@@ -64,34 +64,45 @@ export const getDashboardStats = async (req, res) => {
         }
       }
     ]);
-
-    // Calculate trend with better logic
+    
+    // Get current date in local timezone
     const now = new Date();
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastMonthEnd = currentMonthStart;
-
+    const localNow = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+    
+    // Calculate month boundaries in local timezone
+    const currentMonthStart = new Date(localNow.getFullYear(), localNow.getMonth(), 1);
+    const lastMonthStart = new Date(localNow.getFullYear(), localNow.getMonth() - 1, 1);
+    const nextMonthStart = new Date(localNow.getFullYear(), localNow.getMonth() + 1, 1);
+    
+    // Convert to UTC for MongoDB query (query start of day in local timezone)
+    const currentMonthStartUTC = new Date(currentMonthStart.getTime() + (now.getTimezoneOffset() * 60000));
+    const lastMonthStartUTC = new Date(lastMonthStart.getTime() + (now.getTimezoneOffset() * 60000));
+    const nextMonthStartUTC = new Date(nextMonthStart.getTime() + (now.getTimezoneOffset() * 60000));
+    
+    // Get responses for current month (local timezone)
     const currentMonthResponses = await Response.countDocuments({
-      submittedAt: { $gte: currentMonthStart }
+      submittedAt: { $gte: currentMonthStartUTC, $lt: nextMonthStartUTC }
     });
-
+    
+    // Get responses for last month (local timezone)
     const lastMonthResponses = await Response.countDocuments({
-      submittedAt: {
-        $gte: lastMonthStart,
-        $lt: lastMonthEnd
-      }
+      submittedAt: { $gte: lastMonthStartUTC, $lt: currentMonthStartUTC }
     });
-
+    
     // Get month names for display
     const currentMonthName = currentMonthStart.toLocaleDateString('en-US', { month: 'long' });
     const lastMonthName = lastMonthStart.toLocaleDateString('en-US', { month: 'long' });
-
+    
     // Calculate trend with proper handling
     let responseTrend = 0;
     let trendDirection = 'stable';
     let trendMessage = 'No change';
     let trendDetails = '';
-
+    
+    // Check if current month just started (within first 7 days of local month)
+    const currentDay = localNow.getDate();
+    const isEarlyMonth = currentDay <= 7;
+    
     if (lastMonthResponses === 0 && currentMonthResponses === 0) {
       // No responses in either month
       responseTrend = 0;
@@ -105,11 +116,6 @@ export const getDashboardStats = async (req, res) => {
       trendMessage = `+${currentMonthResponses} this month`;
       trendDetails = `Started receiving responses in ${currentMonthName}`;
     } else if (lastMonthResponses > 0 && currentMonthResponses === 0) {
-      // Check if current month just started (within first 7 days)
-      const daysInCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-      const currentDay = now.getDate();
-      const isEarlyMonth = currentDay <= 7;
-
       if (isEarlyMonth) {
         // Early in the month, show optimistic message
         responseTrend = 0;
@@ -129,7 +135,7 @@ export const getDashboardStats = async (req, res) => {
       const absPercentage = Math.abs(percentageChange);
       responseTrend = Math.round(absPercentage);
       trendDirection = percentageChange >= 0 ? 'up' : 'down';
-
+      
       if (percentageChange >= 0) {
         trendMessage = `+${currentMonthResponses} this month`;
         trendDetails = `${absPercentage.toFixed(1)}% increase from ${lastMonthName}`;
@@ -138,7 +144,7 @@ export const getDashboardStats = async (req, res) => {
         trendDetails = `${absPercentage.toFixed(1)}% decrease from ${lastMonthName}`;
       }
     }
-
+    
     res.json({
       totalForms,
       totalResponses,
