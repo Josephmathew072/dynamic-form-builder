@@ -65,27 +65,60 @@ export const getDashboardStats = async (req, res) => {
       }
     ]);
     
-    // Get total responses per form for trend calculation
+    // Calculate trend with better logic
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = currentMonthStart;
+    
     const currentMonthResponses = await Response.countDocuments({
-      submittedAt: { $gte: new Date(new Date().setDate(1)) } // first day of current month
+      submittedAt: { $gte: currentMonthStart }
     });
     
     const lastMonthResponses = await Response.countDocuments({
       submittedAt: {
-        $gte: new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1),
-        $lt: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+        $gte: lastMonthStart,
+        $lt: lastMonthEnd
       }
     });
     
-    const responseTrend = lastMonthResponses === 0 
-      ? 100 
-      : ((currentMonthResponses - lastMonthResponses) / lastMonthResponses) * 100;
+    // Calculate trend with proper handling
+    let responseTrend = 0;
+    let trendDirection = 'stable';
+    let trendMessage = 'No change';
+    
+    if (lastMonthResponses === 0 && currentMonthResponses === 0) {
+      // No responses in either month
+      responseTrend = 0;
+      trendDirection = 'stable';
+      trendMessage = 'No responses yet';
+    } else if (lastMonthResponses === 0 && currentMonthResponses > 0) {
+      // New responses this month
+      responseTrend = 100;
+      trendDirection = 'up';
+      trendMessage = 'Started receiving responses';
+    } else if (lastMonthResponses > 0 && currentMonthResponses === 0) {
+      // No responses this month
+      responseTrend = -100;
+      trendDirection = 'down';
+      trendMessage = 'No responses this month';
+    } else {
+      // Calculate percentage change
+      const percentageChange = ((currentMonthResponses - lastMonthResponses) / lastMonthResponses) * 100;
+      responseTrend = Math.round(Math.abs(percentageChange));
+      trendDirection = percentageChange >= 0 ? 'up' : 'down';
+      trendMessage = `${Math.abs(percentageChange).toFixed(1)}% ${percentageChange >= 0 ? 'increase' : 'decrease'}`;
+    }
     
     res.json({
       totalForms,
       totalResponses,
       activeForms,
-      responseTrend: Math.round(responseTrend),
+      responseTrend,
+      trendDirection,
+      trendMessage,
+      currentMonthResponses,
+      lastMonthResponses,
       recentForms: recentForms.map(form => ({
         id: form._id,
         title: form.title,

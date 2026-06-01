@@ -174,3 +174,144 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Responsive utilities */
+@layer utilities {
+  /* Mobile-first responsive containers */
+  .container-responsive {
+    @apply w-full px-4 mx-auto;
+  }
+  
+  @screen sm {
+    .container-responsive {
+      @apply max-w-screen-sm px-6;
+    }
+  }
+  
+  @screen md {
+    .container-responsive {
+      @apply max-w-screen-md px-6;
+    }
+  }
+  
+  @screen lg {
+    .container-responsive {
+      @apply max-w-screen-lg px-8;
+    }
+  }
+  
+  @screen xl {
+    .container-responsive {
+      @apply max-w-screen-xl px-8;
+    }
+  }
+
+  /* Responsive text sizes */
+  .heading-responsive {
+    @apply text-xl sm:text-2xl md:text-3xl lg:text-4xl;
+  }
+  
+  /* Responsive grid */
+  .grid-responsive {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6;
+  }
+  
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Mobile menu animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.slide-out {
+  animation: slideOut 0.3s ease-out;
+}
+
+/* Better touch targets for mobile */
+@media (max-width: 768px) {
+  button, 
+  a, 
+  [role="button"],
+  .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Improve form inputs on mobile */
+  input, 
+  select, 
+  textarea {
+    font-size: 16px !important; /* Prevents zoom on focus in iOS */
+  }
+  
+  /* Better spacing for mobile cards */
+  .card-hover {
+    @apply mx-0;
+  }
+}
+
+
+/* Responsive breakpoints */
+@layer base {
+  /* Mobile first - default styles */
+  :root {
+    --sidebar-width: 0px;
+  }
+  
+  /* Tablet and up */
+  @screen md {
+    --sidebar-width: 0px;
+  }
+  
+  /* Desktop and up */
+  @screen lg {
+    --sidebar-width: 256px;
+  }
+}
+
+/* Responsive container */
+.container-responsive {
+  width: 100%;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container-responsive {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-responsive {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}

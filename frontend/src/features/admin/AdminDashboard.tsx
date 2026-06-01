@@ -10,6 +10,8 @@ import {
     ClipboardList,
     BarChart3,
     TrendingUp,
+    TrendingDown,
+    Minus,
     Users,
     FileText,
     ArrowRight,
@@ -28,38 +30,58 @@ export default function AdminDashboard() {
         dispatch(fetchDashboardStats())
     }, [dispatch])
 
+    // Safe access to stats with fallback values
+    const totalForms = stats?.totalForms ?? 0
+    const totalResponses = stats?.totalResponses ?? 0
+    const activeForms = stats?.activeForms ?? 0
+    const currentMonthResponses = stats?.currentMonthResponses ?? 0
+    const lastMonthResponses = stats?.lastMonthResponses ?? 0
+    const trendMessage = stats?.trendMessage ?? 'No data'
+    const trendDirection = stats?.trendDirection ?? 'stable'
+    const recentForms = stats?.recentForms ?? []
+    const recentActivity = stats?.recentActivity ?? []
+
     const quickStats = [
         {
             title: "Total Forms",
-            value: stats?.totalForms || 0,
+            value: totalForms,
             icon: Layers,
             gradient: "from-blue-500 to-cyan-500",
             bgGradient: "from-blue-50 to-cyan-50",
             textColor: "text-blue-600",
+            trend: totalForms > 0 ? `${totalForms} total` : 'No forms',
+            trendUp: true
         },
         {
             title: "Total Responses",
-            value: stats?.totalResponses || 0,
+            value: totalResponses,
             icon: Users,
             gradient: "from-purple-500 to-pink-500",
             bgGradient: "from-purple-50 to-pink-50",
             textColor: "text-purple-600",
+            trend: totalResponses > 0 ? `${totalResponses} total` : 'No responses',
+            trendUp: true
         },
         {
             title: "Active Forms",
-            value: stats?.activeForms || 0,
+            value: activeForms,
             icon: Activity,
             gradient: "from-green-500 to-emerald-500",
             bgGradient: "from-green-50 to-emerald-50",
             textColor: "text-green-600",
+            trend: activeForms > 0 && totalForms > 0 ? `${((activeForms / totalForms) * 100).toFixed(0)}% of total` : 'No active forms',
+            trendUp: true
         },
         {
-            title: "Response Trend",
-            value: `${stats?.responseTrend || 0}%`,
+            title: "Monthly Trend",
+            value: currentMonthResponses,
             icon: TrendingUp,
             gradient: "from-orange-500 to-red-500",
             bgGradient: "from-orange-50 to-red-50",
             textColor: "text-orange-600",
+            trend: trendMessage,
+            trendUp: trendDirection === 'up',
+            subValue: `vs ${lastMonthResponses} last month`
         },
     ]
 
@@ -109,21 +131,28 @@ export default function AdminDashboard() {
                             </div>
                         </CardHeader>
                         <CardContent className="relative">
-                            <div className="flex items-baseline justify-between">
-                                <div className="text-3xl font-bold">{stat.value}</div>
-                                {stat.title === "Response Trend" && stats?.responseTrend && (
-                                    <div className={`flex items-center gap-1 text-xs font-medium ${stats.responseTrend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        <TrendingUp className="h-3 w-3" />
-                                        {stats.responseTrend >= 0 ? '+' : ''}{stats.responseTrend}%
-                                    </div>
+                            <div className="flex flex-col">
+                                <div className="flex items-baseline justify-between">
+                                    <div className="text-3xl font-bold">{stat.value}</div>
+                                    {stat.title === "Monthly Trend" && stats && (
+                                        <div className={`flex items-center gap-1 text-xs font-medium ${trendDirection === 'up' ? 'text-green-600' : trendDirection === 'down' ? 'text-red-600' : 'text-gray-500'}`}>
+                                            {trendDirection === 'up' && <TrendingUp className="h-3 w-3" />}
+                                            {trendDirection === 'down' && <TrendingDown className="h-3 w-3" />}
+                                            {trendDirection === 'stable' && <Minus className="h-3 w-3" />}
+                                            {trendMessage}
+                                        </div>
+                                    )}
+                                </div>
+                                {stat.title === "Monthly Trend" && (
+                                    <p className="text-xs text-muted-foreground mt-1">{stat.subValue}</p>
                                 )}
+                                <p className="text-xs text-muted-foreground mt-2">
+                                    {stat.title === "Total Forms" && "Forms created"}
+                                    {stat.title === "Total Responses" && "Total submissions received"}
+                                    {stat.title === "Active Forms" && "Forms with responses"}
+                                    {stat.title === "Monthly Trend" && "Responses this month"}
+                                </p>
                             </div>
-                            <p className="text-xs text-muted-foreground mt-2">
-                                {stat.title === "Total Forms" && "Forms created"}
-                                {stat.title === "Total Responses" && "Total submissions received"}
-                                {stat.title === "Active Forms" && "Forms with responses"}
-                                {stat.title === "Response Trend" && "vs last month"}
-                            </p>
                         </CardContent>
                     </Card>
                 ))}
@@ -174,9 +203,9 @@ export default function AdminDashboard() {
                         <CardDescription>Your most recently created forms</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {stats?.recentForms && stats.recentForms.length > 0 ? (
+                        {recentForms.length > 0 ? (
                             <div className="space-y-3">
-                                {stats.recentForms.map((form, index) => (
+                                {recentForms.map((form) => (
                                     <Link
                                         key={form.id}
                                         to={`/admin/forms/${form.id}/responses`}
@@ -226,9 +255,9 @@ export default function AdminDashboard() {
                     <CardDescription>Latest responses and updates</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {stats?.recentActivity && stats.recentActivity.length > 0 ? (
+                    {recentActivity.length > 0 ? (
                         <div className="space-y-4">
-                            {stats.recentActivity.map((activity, index) => (
+                            {recentActivity.map((activity, index) => (
                                 <div
                                     key={activity.id}
                                     className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/50 transition-colors animate-slide-up"
@@ -269,12 +298,12 @@ export default function AdminDashboard() {
                         <h3 className="font-semibold text-lg">Pro Tip</h3>
                         <p className="text-muted-foreground text-sm mt-1">
                             Use the analytics dashboard to track form performance and identify areas for improvement.
-                            {stats && stats.totalForms > 0 && (
+                            {stats && totalForms > 0 && (
                                 <span>
-                                    You have {stats.totalForms} form
-                                    {stats.totalForms !== 1 ? "s" : ""} with{" "}
-                                    {stats.totalResponses} total response
-                                    {stats.totalResponses !== 1 ? "s" : ""}.
+                                    {" "}You have {totalForms} form
+                                    {totalForms !== 1 ? "s" : ""} with{" "}
+                                    {totalResponses} total response
+                                    {totalResponses !== 1 ? "s" : ""}.
                                 </span>
                             )}
                         </p>

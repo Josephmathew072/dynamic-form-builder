@@ -27,6 +27,10 @@ export interface DashboardStats {
   totalResponses: number;
   activeForms: number;
   responseTrend: number;
+  trendDirection: 'up' | 'down' | 'stable';
+  trendMessage: string;
+  currentMonthResponses: number;
+  lastMonthResponses: number;
   recentForms: Array<{
     id: string;
     title: string;
@@ -40,3 +44,4 @@ export interface DashboardStats {
     time: string;
   }>;
 }
+
