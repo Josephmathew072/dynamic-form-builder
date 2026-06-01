@@ -1,6 +1,7 @@
 import Form from '../models/Form.js';
 import Response from '../models/Response.js';
 import ShortUniqueId from 'short-unique-id';
+import { formatIST } from '../utils/dateUtils.js';
 
 
 const uid = new ShortUniqueId({ length: 8 });
@@ -10,16 +11,16 @@ const uid = new ShortUniqueId({ length: 8 });
 export const createForm = async (req, res) => {
   try {
     const { title, description, fields } = req.body;
-    
+
     const shareableId = uid.rnd();
-    
+
     const form = await Form.create({
       title,
       description,
       fields,
       shareableId
     });
-    
+
     res.status(201).json(form);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -32,6 +33,13 @@ export const getForms = async (req, res) => {
   try {
     // console.log("Fetching all forms...")
     const forms = await Form.find().sort({ createdAt: -1 });
+    // Format dates in IST before sending
+    // const formattedForms = forms.map(form => ({
+    //   ...form.toObject(),
+    //   createdAt: formatIST(form.createdAt, 'full'),
+    //   createdAtRaw: form.createdAt // Keep raw for reference if needed
+    // }));
+    // res.json(formattedForms);
     res.json(forms);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -60,6 +68,11 @@ export const getFormByShareableId = async (req, res) => {
     if (!form) {
       return res.status(404).json({ message: 'Form not found' });
     }
+    // const formattedForm = {
+    //   ...form.toObject(),
+    //   createdAt: formatIST(form.createdAt, 'full')
+    // };
+    // res.json(formattedForm);
     res.json(form);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -72,15 +85,15 @@ export const updateForm = async (req, res) => {
   try {
     const { title, description, fields } = req.body;
     const form = await Form.findById(req.params.id);
-    
+
     if (!form) {
       return res.status(404).json({ message: 'Form not found' });
     }
-    
+
     form.title = title || form.title;
     form.description = description;
     form.fields = fields || form.fields;
-    
+
     const updatedForm = await form.save();
     res.json(updatedForm);
   } catch (error) {
@@ -96,11 +109,11 @@ export const deleteForm = async (req, res) => {
     if (!form) {
       return res.status(404).json({ message: 'Form not found' });
     }
-    
+
     // Delete all responses for this form as well
     await Response.deleteMany({ formId: req.params.id });
     await form.deleteOne();
-    
+
     res.json({ message: 'Form deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
